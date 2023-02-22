@@ -1,0 +1,3 @@
+test:
+	go test -v ./...
+	./fuzzall.sh 2
