@@ -40,12 +40,12 @@ func (b *BinaryStruct) UnmarshalText(data []byte) error {
 }
 
 func testIdentity[T any](t *testing.T, orig T) {
-	s, err := strconvert.Stringify(&orig)
+	s, err := strconvert.Stringify(reflect.ValueOf(&orig))
 	if err != nil {
 		t.Fatalf("strconvert.Stringify(%v) = \"\", %q;", orig, err)
 	}
 	var parsed T
-	if err := strconvert.Parse(s, &parsed); err != nil {
+	if err := strconvert.Parse(s, reflect.ValueOf(&parsed)); err != nil {
 		typ := reflect.TypeOf(parsed)
 		t.Fatalf("strconvert.Parse(%q, <%s>) = %v, %q", s, typ.Kind(), reflect.Zero(typ), err)
 	}

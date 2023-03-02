@@ -15,7 +15,7 @@ import (
 )
 
 func testStringify[T any](t *testing.T, in T, want string, optFns ...func(*strconvert.Options)) {
-	got, err := strconvert.Stringify(in, optFns...)
+	got, err := strconvert.Stringify(reflect.ValueOf(in), optFns...)
 	if err != nil {
 		t.Fatalf("strconvert.Stringify(%v) = \"\", %q; want %q, nil", in, err, want)
 	}
@@ -26,7 +26,7 @@ func testStringify[T any](t *testing.T, in T, want string, optFns ...func(*strco
 
 func testBadStringifier[T any](t *testing.T, stringifier func(v T) (string, error)) {
 	var zero T
-	got, err := strconvert.Stringify(zero, strconvert.WithStringifier(stringifier))
+	got, err := strconvert.Stringify(reflect.ValueOf(zero), strconvert.WithStringifier(stringifier))
 	if err == nil {
 		t.Fatalf("strconvert.Stringify(%v, strconvert.WithStringifier[%s](...)) = %q, nil; want error", zero, reflect.TypeOf(zero), got)
 	}

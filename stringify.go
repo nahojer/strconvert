@@ -11,7 +11,7 @@ import (
 
 // Stringify converts v to a string.
 //
-// The following types are supported:
+// The following types for the underlying Go value of v are supported:
 //   - Types registered using the WithStringifier option
 //   - Types implementing [encoding.TextMmarshaler]
 //   - Types implementing [encoding.BinaryMarshaler]
@@ -22,7 +22,8 @@ import (
 //   - ~float32, ~float64
 //   - ~complex64, ~complex128
 //   - ~bool
-//   - slices, arrays and maps of any of the aforementioned types
+//   - Any pointer to the above types
+//   - slices, arrays and maps of any of the above types
 //
 // Stringify errors for any unsupported type. More types may be be supported in
 // the future.
@@ -33,12 +34,12 @@ import (
 //
 // Map values are sorted before formatted into the final string representation,
 // ensuring consistent and predictable output.
-func Stringify[V any](v V, optFns ...func(*Options)) (string, error) {
+func Stringify(v reflect.Value, optFns ...func(*Options)) (string, error) {
 	opts := buildOptions(optFns)
 	if opts.savedErr != nil {
 		return "", opts.savedErr
 	}
-	return stringify(reflect.ValueOf(v), &opts)
+	return stringify(v, &opts)
 }
 
 func stringify(v reflect.Value, opts *Options) (string, error) {

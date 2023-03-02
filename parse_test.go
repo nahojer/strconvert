@@ -18,7 +18,7 @@ import (
 func testParse[T any](t *testing.T, in string, want T, optFns ...func(*strconvert.Options)) {
 	var got T
 	kind := reflect.TypeOf(got).Kind()
-	if err := strconvert.Parse(in, &got, optFns...); err != nil {
+	if err := strconvert.Parse(in, reflect.ValueOf(&got), optFns...); err != nil {
 		t.Fatalf("strconvert.Parse(%q, <%s>) = 0, %q; want %v, nil", in, kind, err, want)
 	}
 	if !cmp.Equal(got, want) {
@@ -28,7 +28,7 @@ func testParse[T any](t *testing.T, in string, want T, optFns ...func(*strconver
 
 func testBadParser[T any](t *testing.T, parser func(string) (T, error)) {
 	var got T
-	err := strconvert.Parse("", &got, strconvert.WithParser(parser))
+	err := strconvert.Parse("", reflect.ValueOf(&got), strconvert.WithParser(parser))
 	if err == nil {
 		t.Fatalf("strconvert.Parse(\"\", %v, strconvert.WithParser[%s](...)) = nil; want error", got, reflect.TypeOf(got))
 	}
@@ -103,7 +103,7 @@ func TestParse(t *testing.T) {
 		var perr *strconvert.InvalidParseError
 
 		// Not a pointer.
-		err := strconvert.Parse("123", 123)
+		err := strconvert.Parse("123", reflect.ValueOf(123))
 		if err == nil {
 			t.Fatalf("strconvert.Parse(123, <int>) = 0, nil; want error")
 		}
@@ -112,7 +112,7 @@ func TestParse(t *testing.T) {
 		}
 
 		// Nil.
-		err = strconvert.Parse("123", nil)
+		err = strconvert.Parse("123", reflect.ValueOf(nil))
 		if err == nil {
 			t.Fatalf("strconvert.Parse(123, nil) = 0, nil; want error")
 		}

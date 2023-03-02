@@ -25,11 +25,13 @@ func (e *InvalidParseError) Error() string {
 	return "strconvert: Parse(nil " + e.Type.String() + ")"
 }
 
-// Parse parses the string s and stores the result in the value pointed to by v.
-// If v is nil or not a pointer, Parse returns an InvalidParseError.
+// Parse parses the string s and stores the result in the underlying Go value
+// pointed to by v. If v is nil or not a pointer, Parse returns an
+// InvalidParseError.
 //
 // Parse is the inverse operation of calling Stringify with the same options and
-// complementing custom parsers/stringifiers. The following types are supported:
+// complementing custom parsers/stringifiers. The following types for the underlying
+// Go value of v are supported:
 //   - Types registered using the WithParser option
 //   - Types implementing [encoding.TextUnmarshaler]
 //   - Types implementing [encoding.BinaryUnmarshaler]
@@ -40,17 +42,17 @@ func (e *InvalidParseError) Error() string {
 //   - ~float32, ~float64
 //   - ~complex64, ~complex128
 //   - ~bool
-//   - slices, arrays and maps of any of the aforementioned types
-func Parse(s string, v any, optFns ...func(*Options)) error {
+//   - Any pointer to the above types
+//   - slices, arrays and maps of any of the above types
+func Parse(s string, v reflect.Value, optFns ...func(*Options)) error {
 	opts := buildOptions(optFns)
 	if opts.savedErr != nil {
 		return opts.savedErr
 	}
-	rv := reflect.ValueOf(v)
-	if rv.Kind() != reflect.Pointer || rv.IsNil() {
+	if v.Kind() != reflect.Pointer || v.IsNil() {
 		return &InvalidParseError{reflect.TypeOf(v)}
 	}
-	return parse(s, reflect.Indirect(rv), &opts)
+	return parse(s, reflect.Indirect(v), &opts)
 }
 
 func parse(s string, v reflect.Value, opts *Options) error {
