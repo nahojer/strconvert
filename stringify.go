@@ -12,6 +12,7 @@ import (
 // Stringify converts v to a string.
 //
 // The following types for the underlying Go value of v are supported:
+//
 //   - Types registered using the WithStringifier option
 //   - Types implementing [encoding.TextMmarshaler]
 //   - Types implementing [encoding.BinaryMarshaler]
@@ -33,7 +34,11 @@ import (
 // Override this behaviour by registering custom stringifiers.
 //
 // Map values are sorted before formatted into the final string representation,
-// ensuring consistent and predictable output.
+// ensuring consistent and predictable output. By default, keys and values are
+// separated using colons (":") and key, value pairs are separated using
+// semicolons (";").
+//
+// By default, slice and array elements are separated using semicolons (";").
 func Stringify(v reflect.Value, optFns ...func(*Options)) (string, error) {
 	opts := buildOptions(optFns)
 	if opts.savedErr != nil {

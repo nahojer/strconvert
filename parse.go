@@ -32,6 +32,7 @@ func (e *InvalidParseError) Error() string {
 // Parse is the inverse operation of calling Stringify with the same options and
 // complementing custom parsers/stringifiers. The following types for the underlying
 // Go value of v are supported:
+//
 //   - Types registered using the WithParser option
 //   - Types implementing [encoding.TextUnmarshaler]
 //   - Types implementing [encoding.BinaryUnmarshaler]
@@ -44,6 +45,9 @@ func (e *InvalidParseError) Error() string {
 //   - ~bool
 //   - Any pointer to the above types
 //   - slices, arrays and maps of any of the above types
+//
+// Parse errors for any unsupported type. More types may be be supported in
+// the future.
 func Parse(s string, v reflect.Value, optFns ...func(*Options)) error {
 	opts := buildOptions(optFns)
 	if opts.savedErr != nil {
