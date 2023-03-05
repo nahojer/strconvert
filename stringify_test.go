@@ -17,10 +17,10 @@ import (
 func testStringify[T any](t *testing.T, in T, want string, optFns ...func(*strconvert.Options)) {
 	got, err := strconvert.Stringify(reflect.ValueOf(in), optFns...)
 	if err != nil {
-		t.Fatalf("strconvert.Stringify(%v) = \"\", %q; want %q, nil", in, err, want)
+		t.Fatalf("Stringify(%v) = \"\", %q; want %q, nil", in, err, want)
 	}
 	if !cmp.Equal(got, want) {
-		t.Errorf("strconvert.Stringify(%v) = %q, nil; want %q, nil", in, got, want)
+		t.Errorf("Stringify(%v) = %q, nil; want %q, nil", in, got, want)
 	}
 }
 
@@ -28,7 +28,7 @@ func testBadStringifier[T any](t *testing.T, stringifier func(v T) (string, erro
 	var zero T
 	got, err := strconvert.Stringify(reflect.ValueOf(zero), strconvert.WithStringifier(stringifier))
 	if err == nil {
-		t.Fatalf("strconvert.Stringify(%v, strconvert.WithStringifier[%s](...)) = %q, nil; want error", zero, reflect.TypeOf(zero), got)
+		t.Fatalf("Stringify(%v, strconvert.WithStringifier[%s](...)) = %q, nil; want error", zero, reflect.TypeOf(zero), got)
 	}
 	if !strings.Contains(err.Error(), "not a valid stringifier argument type") {
 		t.Errorf("unexpected error %q", err)

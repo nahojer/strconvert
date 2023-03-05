@@ -18,19 +18,19 @@ import (
 func testParse[T any](t *testing.T, in string, want T, optFns ...func(*strconvert.Options)) {
 	var got T
 	kind := reflect.TypeOf(got).Kind()
-	if err := strconvert.Parse(in, reflect.ValueOf(&got), optFns...); err != nil {
-		t.Fatalf("strconvert.Parse(%q, <%s>) = 0, %q; want %v, nil", in, kind, err, want)
+	if err := strconvert.Parse(in, reflect.Indirect(reflect.ValueOf(&got)), optFns...); err != nil {
+		t.Fatalf("Parse(%q, <%s>) = 0, %q; want %v, nil", in, kind, err, want)
 	}
 	if !cmp.Equal(got, want) {
-		t.Errorf("strconvert.Parse(%q, <%s>) = %v, nil; want %v, nil", in, kind, got, want)
+		t.Errorf("Parse(%q, <%s>) = %v, nil; want %v, nil", in, kind, got, want)
 	}
 }
 
 func testBadParser[T any](t *testing.T, parser func(string) (T, error)) {
 	var got T
-	err := strconvert.Parse("", reflect.ValueOf(&got), strconvert.WithParser(parser))
+	err := strconvert.Parse("", reflect.Indirect(reflect.ValueOf(&got)), strconvert.WithParser(parser))
 	if err == nil {
-		t.Fatalf("strconvert.Parse(\"\", %v, strconvert.WithParser[%s](...)) = nil; want error", got, reflect.TypeOf(got))
+		t.Fatalf("Parse(\"\", %v, WithParser[%s](...)) = nil; want error", got, reflect.TypeOf(got))
 	}
 	if !strings.Contains(err.Error(), "not a valid parser return type") {
 		t.Errorf("unexpected error %q", err)
@@ -86,6 +86,19 @@ func TestParse(t *testing.T) {
 		}))
 	})
 
+	t.Run("addressable struct field", func(t *testing.T) {
+		strct := &struct{ Got float64 }{}
+		kind := reflect.TypeOf(strct.Got).Kind()
+		in := "42.37"
+		want := 42.37
+		if err := strconvert.Parse(in, reflect.Indirect(reflect.ValueOf(strct)).FieldByName("Got")); err != nil {
+			t.Fatalf("Parse(%q, <%s>) = 0, %q; want %v, nil", in, kind, err, want)
+		}
+		if !cmp.Equal(strct.Got, want) {
+			t.Errorf("Parse(%q, <%s>) = %v, nil; want %v, nil", in, kind, strct.Got, want)
+		}
+	})
+
 	t.Run("bad parser types", func(t *testing.T) {
 		testBadParser(t, func(string) (any, error) { return "", nil })
 		testBadParser(t, func(string) (fmt.Stringer, error) { var s fmt.Stringer; return s, nil })
@@ -100,23 +113,21 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("invalid parse error", func(t *testing.T) {
-		var perr *strconvert.InvalidParseError
-
-		// Not a pointer.
+		// Not addressable.
 		err := strconvert.Parse("123", reflect.ValueOf(123))
 		if err == nil {
-			t.Fatalf("strconvert.Parse(123, <int>) = 0, nil; want error")
+			t.Fatalf("Parse(123, <int>) = 0, nil; want error")
 		}
-		if !errors.As(err, &perr) {
+		if !errors.Is(err, strconvert.ErrInvalidParseArgument) {
 			t.Errorf("unexpected error %q", err)
 		}
 
 		// Nil.
 		err = strconvert.Parse("123", reflect.ValueOf(nil))
 		if err == nil {
-			t.Fatalf("strconvert.Parse(123, nil) = 0, nil; want error")
+			t.Fatalf("Parse(123, nil) = 0, nil; want error")
 		}
-		if !errors.As(err, &perr) {
+		if !errors.Is(err, strconvert.ErrInvalidParseArgument) {
 			t.Errorf("unexpected error %q", err)
 		}
 	})

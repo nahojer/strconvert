@@ -1,6 +1,7 @@
 package strconvert
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -8,26 +9,13 @@ import (
 	"time"
 )
 
-// An InvalidParseError describes an invalid argument passed to Parse.
-// (The argument to Parse must be a non-nil pointer.)
-type InvalidParseError struct {
-	Type reflect.Type
-}
-
-func (e *InvalidParseError) Error() string {
-	if e.Type == nil {
-		return "strconvert: Parse(nil)"
-	}
-
-	if e.Type.Kind() != reflect.Pointer {
-		return "strconvert: Parse(non-pointer " + e.Type.String() + ")"
-	}
-	return "strconvert: Parse(nil " + e.Type.String() + ")"
-}
+// ErrInvalidParseArgument describes an in inalid argument parsed to Parse.
+// (The argument to Parse must be addressable as defined by the reflect package.)
+var ErrInvalidParseArgument = errors.New("")
 
 // Parse parses the string s and stores the result in the underlying Go value
-// pointed to by v. If v is nil or not a pointer, Parse returns an
-// InvalidParseError.
+// pointed to by v. If v is addressable (as defined by the reflect package),
+// Parse returns an ErrInvalidParseArgument.
 //
 // Parse is the inverse operation of calling Stringify with the same options and
 // complementing custom parsers/stringifiers. The following types for the underlying
@@ -53,10 +41,10 @@ func Parse(s string, v reflect.Value, optFns ...func(*Options)) error {
 	if opts.savedErr != nil {
 		return opts.savedErr
 	}
-	if v.Kind() != reflect.Pointer || v.IsNil() {
-		return &InvalidParseError{reflect.TypeOf(v)}
+	if !v.CanAddr() {
+		return ErrInvalidParseArgument
 	}
-	return parse(s, reflect.Indirect(v), &opts)
+	return parse(s, v, &opts)
 }
 
 func parse(s string, v reflect.Value, opts *Options) error {
